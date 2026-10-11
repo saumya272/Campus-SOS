@@ -1,122 +1,182 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
+
+const startingIncidents = [
+  {
+    id: 1,
+    type: 'Medical',
+    location: 'Library, first floor',
+    status: 'New',
+    time: '10:42 AM',
+  },
+  {
+    id: 2,
+    type: 'Security',
+    location: 'Near the main gate',
+    status: 'Acknowledged',
+    time: '10:18 AM',
+  },
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [view, setView] = useState('student');
+  const [emergencyType, setEmergencyType] = useState('Medical');
+  const [location, setLocation] = useState('');
+  const [message, setMessage] = useState('');
+  const [incidents, setIncidents] = useState(startingIncidents);
+
+  function sendDemoAlert(event) {
+    event.preventDefault();
+
+    const newIncident = {
+      id: Date.now(),
+      type: emergencyType,
+      location: location.trim() || 'Location not provided',
+      status: 'New',
+      time: new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
+    setIncidents((currentIncidents) => [newIncident, ...currentIncidents]);
+    setMessage('Demo alert added to the responder list.');
+    setLocation('');
+  }
+
+  function updateStatus(id) {
+    setIncidents((currentIncidents) =>
+      currentIncidents.map((incident) => {
+        if (incident.id !== id) return incident;
+
+        const nextStatus =
+          incident.status === 'New' ? 'Acknowledged' : 'Resolved';
+
+        return { ...incident, status: nextStatus };
+      }),
+    );
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+    <main className="app-shell">
+      <header className="topbar">
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
+          <p className="eyebrow">CAMPUS SAFETY PROJECT</p>
+          <h1>Campus SOS</h1>
         </div>
+
+        <span className="prototype-label">Prototype · sample data</span>
+      </header>
+
+      <nav className="view-switch" aria-label="Choose a prototype screen">
         <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          className={view === 'student' ? 'selected' : ''}
+          onClick={() => setView('student')}
         >
-          Count is {count}
+          Student screen
         </button>
-      </section>
+        <button
+          className={view === 'responder' ? 'selected' : ''}
+          onClick={() => setView('responder')}
+        >
+          Responder screen
+        </button>
+      </nav>
 
-      <div className="ticks"></div>
+      {view === 'student' ? (
+        <section className="panel student-panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">STUDENT</p>
+              <h2>Request help</h2>
+            </div>
+            <span className="status-pill">Ready</span>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <p className="intro">
+            Choose an emergency type and add a location for this demo alert.
+          </p>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <form onSubmit={sendDemoAlert}>
+            <label htmlFor="emergencyType">Emergency type</label>
+            <select
+              id="emergencyType"
+              value={emergencyType}
+              onChange={(event) => setEmergencyType(event.target.value)}
+            >
+              <option>Medical</option>
+              <option>Security</option>
+              <option>Fire</option>
+              <option>Other</option>
+            </select>
+
+            <label htmlFor="location">Location</label>
+            <input
+              id="location"
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              placeholder="Example: Science block, room 204"
+            />
+
+            <button className="sos-button" type="submit">
+              Send demo SOS
+            </button>
+          </form>
+
+          {message && <p className="success-message">{message}</p>}
+
+          <p className="notice">
+            Demo only. This button does not contact campus security or emergency
+            services.
+          </p>
+        </section>
+      ) : (
+        <section className="panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">RESPONDER</p>
+              <h2>Incident dashboard</h2>
+            </div>
+            <span className="status-pill">{incidents.length} incidents</span>
+          </div>
+
+          <p className="intro">
+            Sample incidents for the screen prototype. Select an action to
+            change an incident’s status.
+          </p>
+
+          <div className="incident-list">
+            {incidents.map((incident) => (
+              <article className="incident-card" key={incident.id}>
+                <div>
+                  <div className="incident-title">
+                    <h3>{incident.type}</h3>
+                    <span className={`incident-status ${incident.status.toLowerCase()}`}>
+                      {incident.status}
+                    </span>
+                  </div>
+                  <p>{incident.location}</p>
+                  <small>Reported at {incident.time}</small>
+                </div>
+
+                <button
+                  className="secondary-button"
+                  onClick={() => updateStatus(incident.id)}
+                  disabled={incident.status === 'Resolved'}
+                >
+                  {incident.status === 'New'
+                    ? 'Acknowledge'
+                    : incident.status === 'Resolved'
+                      ? 'Resolved'
+                      : 'Mark resolved'}
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+    </main>
+  );
 }
 
-export default App
+export default App;
