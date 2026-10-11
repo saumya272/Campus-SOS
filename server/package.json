@@ -1,0 +1,1 @@
+{"name":"campus-sos-server","version":"1.0.0","description":"Campus SOS backend","main":"server.js","scripts":{"start":"node server.js","dev":"nodemon server.js"},"dependencies":{"cors":"^2.8.6","dotenv":"^18.0.7","express":"^5.3.0","mongoose":"^9.11.1","socket.io":"^4.8.4"},"devDependencies":{"nodemon":"^3.1.14"}}
