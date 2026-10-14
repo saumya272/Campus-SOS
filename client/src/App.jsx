@@ -1,182 +1,101 @@
-import { useState } from 'react';
-import './App.css';
+import { useRef, useState } from 'react';
+import StudentView from './components/StudentView';
+import ResponderView from './components/ResponderView';
+import { STUDENT_ID, getNextStatus } from './data/constants';
+import { FIRST_SAMPLE_NUMBER, createSampleIncidents } from './data/sampleIncidents';
 
-const startingIncidents = [
-  {
-    id: 1,
-    type: 'Medical',
-    location: 'Library, first floor',
-    status: 'New',
-    time: '10:42 AM',
-  },
-  {
-    id: 2,
-    type: 'Security',
-    location: 'Near the main gate',
-    status: 'Acknowledged',
-    time: '10:18 AM',
-  },
-];
+export default function App() {
+  const [role, setRole] = useState('student');
+  // All demo data lives here, in memory only. It resets when the page reloads.
+  const [incidents, setIncidents] = useState(createSampleIncidents);
+  const lastNumber = useRef(FIRST_SAMPLE_NUMBER);
 
-function App() {
-  const [view, setView] = useState('student');
-  const [emergencyType, setEmergencyType] = useState('Medical');
-  const [location, setLocation] = useState('');
-  const [message, setMessage] = useState('');
-  const [incidents, setIncidents] = useState(startingIncidents);
-
-  function sendDemoAlert(event) {
-    event.preventDefault();
-
-    const newIncident = {
-      id: Date.now(),
-      type: emergencyType,
-      location: location.trim() || 'Location not provided',
+  function createIncident({ type, description, location }) {
+    lastNumber.current += 1;
+    const now = new Date();
+    const incident = {
+      id: `SOS-${lastNumber.current}`,
+      type,
+      description,
+      location,
       status: 'New',
-      time: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      ownerId: STUDENT_ID,
+      createdAt: now,
+      updatedAt: now,
     };
-
-    setIncidents((currentIncidents) => [newIncident, ...currentIncidents]);
-    setMessage('Demo alert added to the responder list.');
-    setLocation('');
+    setIncidents((current) => [incident, ...current]);
+    return incident;
   }
 
-  function updateStatus(id) {
-    setIncidents((currentIncidents) =>
-      currentIncidents.map((incident) => {
-        if (incident.id !== id) return incident;
-
-        const nextStatus =
-          incident.status === 'New' ? 'Acknowledged' : 'Resolved';
-
-        return { ...incident, status: nextStatus };
-      }),
+  // Only allow the next step in the workflow (New -> Acknowledged -> Responding -> Resolved).
+  function changeStatus(id, newStatus) {
+    setIncidents((current) =>
+      current.map((incident) =>
+        incident.id === id && getNextStatus(incident.status) === newStatus
+          ? { ...incident, status: newStatus, updatedAt: new Date() }
+          : incident
+      )
     );
   }
 
-  return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">CAMPUS SAFETY PROJECT</p>
-          <h1>Campus SOS</h1>
-        </div>
+  function resetDemo() {
+    lastNumber.current = FIRST_SAMPLE_NUMBER;
+    setIncidents(createSampleIncidents());
+  }
 
-        <span className="prototype-label">Prototype · sample data</span>
+  return (
+    <>
+      <a className="skip-link" href="#main">
+        Skip to main content
+      </a>
+
+      <div className="demo-banner" role="note">
+        <strong>Demo only.</strong> Campus SOS is a prototype. It does not contact responders or emergency
+        services. In a real emergency, contact your campus security or local emergency number directly.
+      </div>
+
+      <header className="site-header">
+        <div className="container header-inner">
+          <p className="brand">Campus SOS</p>
+          <nav aria-label="Prototype view switcher" className="switcher">
+            <span className="switcher-label">Demo view (not a real login):</span>
+            <button
+              type="button"
+              className="switch-btn"
+              aria-pressed={role === 'student'}
+              onClick={() => setRole('student')}
+            >
+              Student
+            </button>
+            <button
+              type="button"
+              className="switch-btn"
+              aria-pressed={role === 'responder'}
+              onClick={() => setRole('responder')}
+            >
+              Responder
+            </button>
+          </nav>
+        </div>
       </header>
 
-      <nav className="view-switch" aria-label="Choose a prototype screen">
-        <button
-          className={view === 'student' ? 'selected' : ''}
-          onClick={() => setView('student')}
-        >
-          Student screen
+      <main id="main" className="container">
+        {role === 'student' ? (
+          <StudentView incidents={incidents} onCreateIncident={createIncident} />
+        ) : (
+          <ResponderView incidents={incidents} onChangeStatus={changeStatus} />
+        )}
+      </main>
+
+      <footer className="container site-footer">
+        <p>
+          Prototype frontend with sample data stored only in this page&apos;s memory. Locations are estimates and
+          are never guaranteed to be exact.
+        </p>
+        <button type="button" className="btn btn-link" onClick={resetDemo}>
+          Reset demo data
         </button>
-        <button
-          className={view === 'responder' ? 'selected' : ''}
-          onClick={() => setView('responder')}
-        >
-          Responder screen
-        </button>
-      </nav>
-
-      {view === 'student' ? (
-        <section className="panel student-panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">STUDENT</p>
-              <h2>Request help</h2>
-            </div>
-            <span className="status-pill">Ready</span>
-          </div>
-
-          <p className="intro">
-            Choose an emergency type and add a location for this demo alert.
-          </p>
-
-          <form onSubmit={sendDemoAlert}>
-            <label htmlFor="emergencyType">Emergency type</label>
-            <select
-              id="emergencyType"
-              value={emergencyType}
-              onChange={(event) => setEmergencyType(event.target.value)}
-            >
-              <option>Medical</option>
-              <option>Security</option>
-              <option>Fire</option>
-              <option>Other</option>
-            </select>
-
-            <label htmlFor="location">Location</label>
-            <input
-              id="location"
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-              placeholder="Example: Science block, room 204"
-            />
-
-            <button className="sos-button" type="submit">
-              Send demo SOS
-            </button>
-          </form>
-
-          {message && <p className="success-message">{message}</p>}
-
-          <p className="notice">
-            Demo only. This button does not contact campus security or emergency
-            services.
-          </p>
-        </section>
-      ) : (
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">RESPONDER</p>
-              <h2>Incident dashboard</h2>
-            </div>
-            <span className="status-pill">{incidents.length} incidents</span>
-          </div>
-
-          <p className="intro">
-            Sample incidents for the screen prototype. Select an action to
-            change an incident’s status.
-          </p>
-
-          <div className="incident-list">
-            {incidents.map((incident) => (
-              <article className="incident-card" key={incident.id}>
-                <div>
-                  <div className="incident-title">
-                    <h3>{incident.type}</h3>
-                    <span className={`incident-status ${incident.status.toLowerCase()}`}>
-                      {incident.status}
-                    </span>
-                  </div>
-                  <p>{incident.location}</p>
-                  <small>Reported at {incident.time}</small>
-                </div>
-
-                <button
-                  className="secondary-button"
-                  onClick={() => updateStatus(incident.id)}
-                  disabled={incident.status === 'Resolved'}
-                >
-                  {incident.status === 'New'
-                    ? 'Acknowledge'
-                    : incident.status === 'Resolved'
-                      ? 'Resolved'
-                      : 'Mark resolved'}
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
+      </footer>
+    </>
   );
 }
-
-export default App;
